@@ -1,4 +1,7 @@
 from typing import Union
+from enum import Enum
+import random
+import string
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -10,10 +13,24 @@ class Item(BaseModel):
     price: float
     is_offer: Union[bool, None] = None
 
+class User(BaseModel):
+    id: str
+
+class JobStatus(str, Enum):
+    created = "created"
+    running = "running"
+    completed = "completed"
+    failed = "failed"
+
+class Job(BaseModel):
+    id: str
+    input_url: str
+    output_url: str
+    status: JobStatus
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"status": "ok"}
 
 
 @app.get("/items/{item_id}")
@@ -23,3 +40,13 @@ def read_item(item_id: int, q: Union[str, None] = None):
 @app.put("/items/{item_id}")
 def update_item(item_id: int, item: Item):
     return {"item_name": item.name, "item_id": item_id}
+
+
+@app.post("/users")
+def create_user(user: User):
+    user.id = generate_random_id()
+    return {"user_id": user.id}
+
+
+def generate_random_id() -> str:
+    return ''.join(random.choices(string.ascii_letters, k=12))
