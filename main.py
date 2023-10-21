@@ -4,9 +4,19 @@ import random
 import string
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI()
+
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class JobStatus(str, Enum):
     created = "created"
@@ -22,6 +32,7 @@ class Job(BaseModel):
 
 JOBS = {}
 
+@app.options("/jobs")
 @app.post("/jobs")
 def create_job(job: Job):
     job.id = generate_random_id()
