@@ -1,6 +1,4 @@
 # import asyncio
-import os
-
 from common import params
 from dotenv import load_dotenv
 from temporalio.client import Client
@@ -8,9 +6,9 @@ from temporalio.client import Client
 load_dotenv()
 
 
-async def get_client(url=os.getenv("TEMPORAL_URL")):
+async def get_client(url, namespace='default'):
     # Create client connected to server at the given address
-    client = await Client.connect(url)
+    client = await Client.connect(url, namespace=namespace)
     return client
 
 
