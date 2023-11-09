@@ -13,6 +13,8 @@ load_dotenv()
 
 app = FastAPI()
 
+TEMPORAL_URL = os.getenv("TEMPORAL_URL")
+TEMPORAL_NAMESPACE = os.getenv("TEMPORAL_NAMESPACE") or "default"
 
 origins = ["*"]
 app.add_middleware(
@@ -44,8 +46,8 @@ JOBS = {}
 @app.options("/jobs")
 @app.post("/jobs")
 async def create_job(job: Job):
-    temporal_client = await temporal.get_client(os.getenv("TEMPORAL_URL"))
-    print('job', job)
+    temporal_client = await temporal.get_client(TEMPORAL_URL, TEMPORAL_NAMESPACE)
+    print("job", job)
     job.id = generate_random_id()
     await temporal.start(temporal_client, job.input_url)
     job.status = JobStatus.created
@@ -59,4 +61,4 @@ def get_job(job_id: str) -> Job:
 
 
 def generate_random_id() -> str:
-    return ''.join(random.choices(string.ascii_letters, k=12))
+    return "".join(random.choices(string.ascii_letters, k=12))
