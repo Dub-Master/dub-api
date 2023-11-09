@@ -1,13 +1,12 @@
 import os
 import random
 import string
-from enum import Enum
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pipeline import temporal
-from pydantic import BaseModel
+from pipeline.lib import Job, JobStatus
 
 load_dotenv()
 
@@ -26,21 +25,7 @@ app.add_middleware(
 )
 
 
-class JobStatus(str, Enum):
-    created = "created"
-    running = "running"
-    completed = "completed"
-    failed = "failed"
-
-
-class Job(BaseModel):
-    id: str
-    input_url: str
-    # output_url: str
-    status: JobStatus
-
-
-JOBS = {}
+JOBS: dict[str, Job] = dict()
 
 
 @app.options("/jobs")
@@ -48,16 +33,23 @@ JOBS = {}
 async def create_job(job: Job):
     temporal_client = await temporal.get_client(TEMPORAL_URL, TEMPORAL_NAMESPACE)
     print("job", job)
-    job.id = generate_random_id()
-    await temporal.start(temporal_client, job.input_url)
+    job.id = await temporal.start(temporal_client, job.input_url, job.target_language)
     job.status = JobStatus.created
     JOBS[job.id] = job
-    return {"id": job.id}
+    return job
 
 
 @app.get("/jobs/{job_id}")
-def get_job(job_id: str) -> Job:
-    return JOBS[job_id]
+async def get_job(job_id: str) -> Job:
+    job = JOBS.get(job_id)
+    if not job:
+        return Job(id=job_id, status=JobStatus.failed)
+    temporal_client = await temporal.get_client(TEMPORAL_URL, TEMPORAL_NAMESPACE)
+    status, output = await temporal.describe(temporal_client, job_id)
+    job.status = status
+    job.output_url = output
+    JOBS[job_id] = job
+    return job
 
 
 def generate_random_id() -> str:
