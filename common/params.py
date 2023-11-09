@@ -2,6 +2,12 @@ from dataclasses import dataclass
 
 
 @dataclass
+class E2EParams:
+    url: str
+    language: str
+
+
+@dataclass
 class EncodingParams:
     url: str
 
