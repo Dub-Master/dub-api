@@ -26,7 +26,6 @@ async def start(temporal_client: Client, youtube_url: str, target_language: Lang
     return handle.run_id
 
 async def describe(temporal_client: Client, run_id: str) -> [JobStatus, str | None]:
-    temporal_client.get_workflow_handle_for
     handle: WorkflowHandle = temporal_client.get_workflow_handle("E2EWorkflow", run_id)
     desc = await handle.describe()
     status = convert_status(desc.status)
