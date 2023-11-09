@@ -2,7 +2,6 @@ import os
 import random
 import string
 from enum import Enum
-from typing import Union
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
