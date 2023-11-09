@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class E2EParams:
     url: str
-    language: str
+    target_language: str
 
 
 @dataclass
@@ -20,6 +20,7 @@ class CombineParams:
 
 @dataclass
 class CoreParams:
+    language: str
     s3_url_audio_file: str
     s3_url_video_file: str
     diarization: list
