@@ -12,34 +12,31 @@ load_dotenv()
 async def get_client(url, namespace='default') -> Client:
     return await Client.connect(url, namespace=namespace)
 
-
-async def start(
-        temporal_client: Client,
-        youtube_url: str,
-        target_language: LanguageCode) -> str:
+async def start_workflow(
+    temporal_client: Client,
+    id: str,
+    youtube_url: str,
+    target_language: LanguageCode
+) -> str:
+    workflow_id = f"E2EWorkflow-{id}"
     input = params.E2EParams(
         url=youtube_url,
         target_language=LANGUAGE_NAMES[target_language],
     )
-
-    print(input)
-
-    handle = await temporal_client.start_workflow(
+    await temporal_client.start_workflow(
         "E2EWorkflow",
         input,
-        id="e2e-workflow",
+        id=workflow_id,
         task_queue="e2e-task-queue",
     )
-    print("Started workflow execution:", handle)
-
-    return handle.run_id
 
 
-async def describe(
-        temporal_client: Client,
-        run_id: str) -> Tuple[JobStatus, Union[str, None]]:
-    handle: WorkflowHandle = temporal_client.get_workflow_handle(
-        "E2EWorkflow", run_id)
+async def describe_workflow(
+    temporal_client: Client,
+    id: str
+) -> Tuple[JobStatus, Union[str, None]]:
+    workflow_id = f"E2EWorkflow-{id}"
+    handle = temporal_client.get_workflow_handle(workflow_id)
     desc = await handle.describe()
     status = convert_status(desc.status)
     if status == JobStatus.completed:
