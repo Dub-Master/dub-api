@@ -4,7 +4,7 @@ from common import params
 from dotenv import load_dotenv
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowHandle
 
-from .lib import LANGUAGE_NAMES, JobStatus, LanguageCode
+from lib.types import LANGUAGE_NAMES, JobStatus, LanguageCode
 
 load_dotenv()
 
@@ -36,12 +36,15 @@ async def describe_workflow(
     id: str
 ) -> Tuple[JobStatus, Union[str, None]]:
     workflow_id = f"e2e-{id}"
+
     handle = temporal_client.get_workflow_handle(workflow_id)
     desc = await handle.describe()
+
     status = convert_status(desc.status)
     if status == JobStatus.completed:
         output = await handle.result()
         return status, output
+
     return status, None
 
 
