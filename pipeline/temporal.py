@@ -4,7 +4,7 @@ from common import params
 from dotenv import load_dotenv
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowHandle
 
-from lib.types import LANGUAGE_NAMES, JobStatus, LanguageCode
+from .types import LANGUAGE_NAMES, JobStatus, LanguageCode
 
 load_dotenv()
 

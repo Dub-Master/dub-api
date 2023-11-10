@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pipeline import temporal
-from lib.types import Job, JobIn, JobStatus, is_status_final, LanguageCode
+from pipeline.types import Job, JobIn, JobStatus, is_status_final, LanguageCode
 import sqlalchemy
 
 
