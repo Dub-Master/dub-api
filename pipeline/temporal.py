@@ -18,7 +18,7 @@ async def start_workflow(
     youtube_url: str,
     target_language: LanguageCode
 ) -> str:
-    workflow_id = f"E2EWorkflow-{id}"
+    workflow_id = f"e2e-{id}"
     input = params.E2EParams(
         url=youtube_url,
         target_language=LANGUAGE_NAMES[target_language],
@@ -35,7 +35,7 @@ async def describe_workflow(
     temporal_client: Client,
     id: str
 ) -> Tuple[JobStatus, Union[str, None]]:
-    workflow_id = f"E2EWorkflow-{id}"
+    workflow_id = f"e2e-{id}"
     handle = temporal_client.get_workflow_handle(workflow_id)
     desc = await handle.describe()
     status = convert_status(desc.status)
