@@ -15,6 +15,8 @@ import sqlalchemy
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL is not None and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 TEMPORAL_URL = os.getenv("TEMPORAL_URL")
 TEMPORAL_NAMESPACE = os.getenv("TEMPORAL_NAMESPACE") or "default"
