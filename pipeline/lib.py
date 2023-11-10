@@ -1,4 +1,5 @@
 from enum import Enum
+
 from pydantic import BaseModel
 
 
@@ -14,6 +15,10 @@ class LanguageCode(str, Enum):
     es = "es"
     fr = "fr"
     de = "de"
+    pl = "pl"
+    it = "it"
+    pt = "pt"
+    hi = "hi"
 
 
 LANGUAGE_NAMES = {
@@ -21,6 +26,10 @@ LANGUAGE_NAMES = {
     LanguageCode.es: "Spanish",
     LanguageCode.fr: "French",
     LanguageCode.de: "German",
+    LanguageCode.pl: "Polish",
+    LanguageCode.it: "Italian",
+    LanguageCode.pt: "Portuguese",
+    LanguageCode.hi: "Hindi",
 }
 
 
