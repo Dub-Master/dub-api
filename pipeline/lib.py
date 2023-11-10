@@ -10,6 +10,10 @@ class JobStatus(str, Enum):
     failed = "failed"
 
 
+def is_status_final(status: JobStatus) -> bool:
+    return status in [JobStatus.completed, JobStatus.failed]
+
+
 class LanguageCode(str, Enum):
     en = "en"
     es = "es"
@@ -34,8 +38,8 @@ LANGUAGE_NAMES = {
 
 
 class Job(BaseModel):
-    id: str
-    input_url: str
-    output_url: str
-    target_language: LanguageCode
-    status: JobStatus
+    id: str = ""
+    input_url: str = ""
+    output_url: str = ""
+    target_language: LanguageCode = LanguageCode.en
+    status: JobStatus = ""
