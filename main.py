@@ -1,12 +1,13 @@
 import os
-import random
-import string
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pipeline import temporal
 from pipeline.lib import Job, JobStatus
+import random
+import string
+
 
 load_dotenv()
 
@@ -31,13 +32,19 @@ JOBS: dict[str, Job] = dict()
 @app.options("/jobs")
 @app.post("/jobs")
 async def create_job(job: Job):
+    job.id = random_id()
+    job.status = JobStatus.created
+    print("creating job", job)
+
     temporal_client = await temporal.get_client(
         TEMPORAL_URL, TEMPORAL_NAMESPACE)
-    print("job", job)
-    job.id = await temporal.start(
-        temporal_client, job.input_url, job.target_language)
-    print("job.id", job.id)
-    job.status = JobStatus.created
+    
+    await temporal.start_workflow(
+        temporal_client,
+        job.id,
+        job.input_url, 
+        job.target_language)
+    
     JOBS[job.id] = job
     return job
 
@@ -49,12 +56,11 @@ async def get_job(job_id: str) -> Job:
         return Job(id=job_id, status=JobStatus.failed)
     temporal_client = await temporal.get_client(
         TEMPORAL_URL, TEMPORAL_NAMESPACE)
-    status, output = await temporal.describe(temporal_client, job_id)
+    status, output = await temporal.describe_workflow(temporal_client, job_id)
     job.status = status
     job.output_url = output
     JOBS[job_id] = job
     return job
 
-
-def generate_random_id() -> str:
+def random_id() -> str:
     return "".join(random.choices(string.ascii_letters, k=12))
