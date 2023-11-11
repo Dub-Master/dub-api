@@ -2,6 +2,7 @@ import os
 import random
 import string
 
+from contextlib import asynccontextmanager
 import boto3
 import databases
 from dotenv import load_dotenv
@@ -46,16 +47,14 @@ engine = sqlalchemy.create_engine(
 metadata.create_all(engine)
 
 
-app = FastAPI()
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await database.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown():
+    yield
     await database.disconnect()
+
+
+app = FastAPI()
 
 
 s3 = boto3.client('s3',
