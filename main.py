@@ -48,6 +48,13 @@ metadata.create_all(engine)
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.on_event("startup")
 async def startup():
     await database.connect()
@@ -64,17 +71,7 @@ s3 = boto3.client('s3',
     aws_secret_access_key = AWS_SECRET_ACCESS_KEY
 )
 
-origins = ["*"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-
-@app.options("/jobs")
 @app.post("/jobs")
 async def create_job(job_in: JobIn) -> Job:
     job = Job(
