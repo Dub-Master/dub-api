@@ -1,16 +1,17 @@
 import os
 import random
 import string
+from time import time
+from urllib.parse import parse_qs, urlparse
 
 import boto3
 import databases
+import sqlalchemy
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pipeline import temporal
-from pipeline.types import Job, JobIn, JobStatus, is_status_final, LanguageCode
-import sqlalchemy
-
+from pipeline.types import Job, JobIn, JobStatus, LanguageCode, is_status_final
 
 load_dotenv()
 
@@ -33,11 +34,16 @@ jobs_table = sqlalchemy.Table(
     "jobs",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.String, primary_key=True),
-    sqlalchemy.Column("input_url", sqlalchemy.String, nullable=False, server_default=""),
-    sqlalchemy.Column("output_url", sqlalchemy.String, nullable=False, server_default=""),
-    sqlalchemy.Column("target_language", sqlalchemy.String, nullable=False, server_default=LanguageCode.en),
-    sqlalchemy.Column("status", sqlalchemy.String, nullable=False, server_default=JobStatus.created),
-    sqlalchemy.Column("created_at", sqlalchemy.DateTime, nullable=False, server_default=sqlalchemy.sql.func.now()),
+    sqlalchemy.Column("input_url", sqlalchemy.String,
+                      nullable=False, server_default=""),
+    sqlalchemy.Column("output_url", sqlalchemy.String,
+                      nullable=False, server_default=""),
+    sqlalchemy.Column("target_language", sqlalchemy.String,
+                      nullable=False, server_default=LanguageCode.en),
+    sqlalchemy.Column("status", sqlalchemy.String,
+                      nullable=False, server_default=JobStatus.created),
+    sqlalchemy.Column("created_at", sqlalchemy.DateTime,
+                      nullable=False, server_default=sqlalchemy.sql.func.now()),
 )
 
 engine = sqlalchemy.create_engine(
@@ -55,6 +61,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 async def startup():
     await database.connect()
@@ -66,10 +73,10 @@ async def shutdown():
 
 
 s3 = boto3.client('s3',
-    endpoint_url = AWS_S3_ENDPOINT_URL,
-    aws_access_key_id = AWS_ACCESS_KEY_ID,
-    aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-)
+                  endpoint_url=AWS_S3_ENDPOINT_URL,
+                  aws_access_key_id=AWS_ACCESS_KEY_ID,
+                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+                  )
 
 
 @app.post("/jobs")
@@ -91,11 +98,11 @@ async def create_job(job_in: JobIn) -> Job:
 
     temporal_client = await temporal.get_client(
         TEMPORAL_URL, TEMPORAL_NAMESPACE)
-    
+
     await temporal.start_workflow(
         temporal_client,
         job.id,
-        job.input_url, 
+        job.input_url,
         job.target_language)
 
     return job
@@ -109,13 +116,13 @@ async def get_job(job_id: str) -> Job:
         raise HTTPException(status_code=404, detail="Job not found")
     job = Job(**row)
 
-    if is_status_final(job.status):
+    if is_status_final(job.status) and is_presigned_url_valid(job.output_url):
         return job
 
     temporal_client = await temporal.get_client(
         TEMPORAL_URL, TEMPORAL_NAMESPACE)
     status, output = await temporal.describe_workflow(temporal_client, job_id)
-    
+
     job.status = status
     job.output_url = get_presigned_url(output) if output else ""
 
@@ -127,8 +134,26 @@ async def get_job(job_id: str) -> Job:
 
     return job
 
+
+def is_presigned_url_valid(url: str) -> bool:
+    # Parse the URL to get the query parameters
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+
+    # Get the 'Expires' query parameter
+    expires = query_params.get('Expires', [None])[0]
+
+    # If 'Expires' is not present, the URL is not valid
+    if expires is None:
+        return False
+
+    # Convert 'Expires' to an integer and compare to the current time
+    return int(expires) > time()
+
+
 def random_id() -> str:
     return "".join(random.choices(string.ascii_letters, k=12))
+
 
 def get_presigned_url(key: str) -> str:
     url = s3.generate_presigned_url(
@@ -136,6 +161,7 @@ def get_presigned_url(key: str) -> str:
         Params={
             'Bucket': AWS_S3_BUCKET,
             'Key': key
-        }
+        },
+        ExpiresIn=1209600  # Set expiry to 14 days
     )
     return url
